@@ -80,8 +80,8 @@ def tree_generator():
         help="Path of the ILAMB-ROOT",
     )
     args = parser.parse_args()
-    config_file = args.config_file
-    ilamb_root = args.ilamb_root
+    config_file = args.config_file[0]
+    ilamb_root = args.ilamb_root[0]
 
     try:
         Path(f"{ilamb_root}/DATA").symlink_to("/g/data/ct11/access-nri/replicas/ILAMB", target_is_directory=True)
@@ -94,6 +94,6 @@ def tree_generator():
     datasets = data["datasets"]
 
     for dataset in datasets:
-        add_model_to_tree(**dataset)
+        add_model_to_tree(**dataset, ilamb_root=ilamb_root)
     
     return

@@ -21,7 +21,9 @@ requirements:
     - python >=3.7
     - pyyaml
     - argparse
+    - dask
     - xarray
+    - netcdf4
 
 about:
   home: https://github.com/ACCESS-NRI/med-utils
