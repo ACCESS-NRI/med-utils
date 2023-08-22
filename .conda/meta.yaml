@@ -20,7 +20,7 @@ requirements:
     - pip
     - versioneer
   run:
-    - python >=3.7
+    - python>=3.9
     - pyyaml
     - argparse
     - dask
