@@ -4,6 +4,8 @@ import os
 import xarray
 import argparse
 import yaml
+from .utilities import symlink_force
+
 
 rootpath = {
     "CMIP6": ["/g/data/fs38/publications/CMIP6", "/g/data/oi10/replicas/CMIP6"],
@@ -51,11 +53,7 @@ def add_model_to_tree(ilamb_root, institute, dataset, project, exp, ensemble, ve
                 if not files:
                     continue
                 if len(files) == 1:
-                    try:
-                        Path(f"{model_root}/{var}.nc").unlink()
-                    except:
-                        pass
-                    Path(f"{model_root}/{var}.nc").symlink_to(f"{files[0]}")
+                    symlink_force(f"{files[0]}",  f"{model_root}/{var}.nc")
                 if len(files) > 1:
                     with xarray.open_mfdataset(files, use_cftime=True, combine_attrs='drop_conflicts') as f:
                         f.to_netcdf(f"{model_root}/{var}.nc")
@@ -83,10 +81,8 @@ def tree_generator():
     config_file = args.config_file[0]
     ilamb_root = args.ilamb_root[0]
 
-    try:
-        Path(f"{ilamb_root}/DATA").symlink_to("/g/data/ct11/access-nri/replicas/ILAMB", target_is_directory=True)
-    except :
-        pass
+    Path(ilamb_root).mkdir(parents=True, exist_ok=True)
+    symlink_force("/g/data/ct11/access-nri/replicas/ILAMB", f"{ilamb_root}/DATA")
 
     with open(config_file, 'r') as file:
         data = yaml.safe_load(file)
