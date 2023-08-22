@@ -2,10 +2,9 @@ from pathlib import Path
 import glob
 import os
 import xarray
-import argparse
 import yaml
 from .utilities import symlink_force
-
+from .utilities import MyParser
 
 rootpath = {
     "CMIP6": ["/g/data/fs38/publications/CMIP6", "/g/data/oi10/replicas/CMIP6"],
@@ -62,13 +61,13 @@ def add_model_to_tree(ilamb_root, institute, dataset, project, exp, ensemble, ve
 
 def tree_generator():
 
-    parser=argparse.ArgumentParser(description="Generate an ILAMB-ROOT tree")
+    parser=MyParser(description="Generate an ILAMB-ROOT tree")
 
     parser.add_argument(
-        '--config_file',
+        '--datasets',
         default=False,
         nargs="+",
-        help="Configuration YAML file specifying the model output(s) to add.",
+        help="YAML file specifying the model output(s) to add.",
     )
 
     parser.add_argument(
@@ -78,13 +77,13 @@ def tree_generator():
         help="Path of the ILAMB-ROOT",
     )
     args = parser.parse_args()
-    config_file = args.config_file[0]
+    dataset_file = args.datasets[0]
     ilamb_root = args.ilamb_root[0]
 
     Path(ilamb_root).mkdir(parents=True, exist_ok=True)
     symlink_force("/g/data/ct11/access-nri/replicas/ILAMB", f"{ilamb_root}/DATA")
 
-    with open(config_file, 'r') as file:
+    with open(dataset_file, 'r') as file:
         data = yaml.safe_load(file)
 
     datasets = data["datasets"]

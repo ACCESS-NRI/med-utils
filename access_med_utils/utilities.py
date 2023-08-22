@@ -1,5 +1,7 @@
 import os
 import tempfile
+import argparse
+import sys
 
 def symlink_force(target, link_name):
     '''
@@ -22,3 +24,9 @@ def symlink_force(target, link_name):
     except OSError:  # e.g. permission denied
         os.remove(temp_link_name)
         raise
+
+class MyParser(argparse.ArgumentParser):
+    def error(self, message):
+        sys.stderr.write('error: %s\n' % message)
+        self.print_help()
+        sys.exit(2)
