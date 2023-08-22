@@ -1,4 +1,6 @@
 channels:
+  - conda-forge
+  - accessnri
   - default
 
 dependencies:
