@@ -29,7 +29,7 @@ get_path_function = {
     "CMIP5": get_CMIP5_path
 }
 
-def add_model_to_tree(ilamb_root, dataset, project, exp, ensemble):
+def add_model_to_tree(ilamb_root, institute, dataset, project, exp, ensemble):
     """
     """
     print(f"Adding {dataset} to the ILAMB Tree")
@@ -39,7 +39,7 @@ def add_model_to_tree(ilamb_root, dataset, project, exp, ensemble):
     for mip, vars in mip_vars.items():
         models = []
         for path in rootpath[project]:
-            search_path = os.path.join(path, get_path_function[project](dataset=dataset, exp=exp, ensemble=ensemble, mip=mip))
+            search_path = os.path.join(path, get_path_function[project](institute=institute, dataset=dataset, exp=exp, ensemble=ensemble, mip=mip))
             models += glob.glob(search_path)
         if models:
             model = models[0]
