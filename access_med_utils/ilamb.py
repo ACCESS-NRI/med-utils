@@ -2,6 +2,8 @@ from pathlib import Path
 import glob
 import os
 import xarray
+import argparse
+import yaml
 
 rootpath = {
     "CMIP6": ["/g/data/fs38/publications/CMIP6", "/g/data/oi10/replicas/CMIP6"],
@@ -57,4 +59,41 @@ def add_model_to_tree(ilamb_root, dataset, project, exp, ensemble):
                 if len(files) > 1:
                     with xarray.open_mfdataset(files, use_cftime=True, combine_attrs='drop_conflicts') as f:
                         f.to_netcdf(f"{model_root}/{var}.nc")
+    return
+
+
+def tree_generator():
+
+    parser=argparse.ArgumentParser(description="Generate an ILAMB-ROOT tree")
+
+    parser.add_argument(
+        '--config_file',
+        default=False,
+        nargs="+",
+        help="Configuration YAML file specifying the model output(s) to add.",
+    )
+
+    parser.add_argument(
+        '--ilamb_root',
+        default=False,
+        nargs="+",
+        help="Path of the ILAMB-ROOT",
+    )
+    args = parser.parse_args()
+    config_file = args.config_file
+    ilamb_root = args.ilamb_root
+
+    try:
+        Path(f"{ilamb_root}/DATA").symlink_to("/g/data/ct11/access-nri/replicas/ILAMB", target_is_directory=True)
+    except :
+        pass
+
+    with open(config_file, 'r') as file:
+        data = yaml.safe_load(file)
+
+    datasets = data["datasets"]
+
+    for dataset in datasets:
+        add_model_to_tree(**dataset)
+    
     return

@@ -1,20 +1,24 @@
 [project]
-
-name = "access-med-utils"
+name = "access_med_utils"
 authors = [
-{name = "Romain Beucher", email="romain.beucher@anu.edu.au"},
-{name = "Rhaegar Zeng", email="yousong.zeng@anu.edu.au"}
+    { name = "ACCESS-NRI" },
 ]
 description = "ACCESS MED Utilities"
 readme = "README.md"
 requires-python = ">=3.7"
 license = {text = "APACHE-2.0"}
-classifiers=[
+classifiers = [
+    "Development Status :: 4 - Beta",
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: Apache 2 License",
+    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
 ]
 dependencies = ["argparse", "pyyaml", "xarray"]
+dynamic = ["version"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
 
 [project.scripts]
-ilamb-tree-generator = "access-med-utils:ilamb-tree-generator"
+ilamb-tree-generator = "access_med_utils.ilamb:tree_generator"
