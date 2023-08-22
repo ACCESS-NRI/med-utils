@@ -29,7 +29,7 @@ get_path_function = {
     "CMIP5": get_CMIP5_path
 }
 
-def add_model_to_tree(ilamb_root, institute, dataset, project, exp, ensemble):
+def add_model_to_tree(ilamb_root, institute, dataset, project, exp, ensemble, version):
     """
     """
     print(f"Adding {dataset} to the ILAMB Tree")
@@ -45,7 +45,7 @@ def add_model_to_tree(ilamb_root, institute, dataset, project, exp, ensemble):
             model = models[0]
             for var in vars:
                 if project == "CMIP6":
-                    files = glob.glob(model+f"/{var}/**/latest/*.nc")
+                    files = glob.glob(model+f"/{var}/**/{version}/*.nc")
                 if project == "CMIP5":
                     files = glob.glob(model+f"/*/{var}/*.nc")
                 if not files:
