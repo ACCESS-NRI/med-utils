@@ -1,0 +1,35 @@
+{% set version = "0.1" %}
+
+package:
+  name: access-med-tools
+  version: {{ version }}
+
+source:
+  url: "https://pypi.io/packages/source/a/access-nri-intake/access_nri_intake-{{ version }}.tar.gz"
+
+build:
+  noarch: python
+  number: 0
+  script: "{{ PYTHON }} -m pip install . -vv"
+
+requirements:
+  host:
+    - python
+    - pip
+    - versioneer
+  run:
+    - python >=3.7
+    - pyyaml
+    - argparse
+    - xarray
+
+about:
+  home: https://github.com/ACCESS-NRI/med-utils
+  license: Apache Software
+  license_family: APACHE
+  summary: "ACCESS-MED Utilities"
+  doc_url: https://github.com/ACCESS-NRI/med-utils
+
+extra:
+  recipe-maintainers:
+    - rbeucher
