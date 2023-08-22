@@ -1,0 +1,20 @@
+[project]
+
+name = "access-med-utils"
+authors = [
+{name = "Romain Beucher", email="romain.beucher@anu.edu.au"},
+{name = "Rhaegar Zeng", email="yousong.zeng@anu.edu.au"}
+]
+description = "ACCESS MED Utilities"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "APACHE-2.0"}
+classifiers=[
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache 2 License",
+    "Operating System :: OS Independent",
+]
+dependencies = ["argparse", "pyyaml", "xarray"]
+
+[project.scripts]
+ilamb-tree-generator = "access-med-utils:ilamb-tree-generator"
