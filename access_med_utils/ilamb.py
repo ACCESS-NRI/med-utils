@@ -17,11 +17,11 @@ mip_vars ={
     'Omon':['hfds'],
     }
 
-def get_CMIP6_path(institute = "*", dataset = "*", exp = "*", ensemble = "*", mip="*"):
-    return f"CMIP/{institute}/{dataset}/{exp}/{ensemble}/{mip}"
+def get_CMIP6_path(institute = "*", dataset = "*", exp = "*", ensemble = "*", mip="*", version="**", var="*"):
+    return f"CMIP/{institute}/{dataset}/{exp}/{ensemble}/{mip}/{var}/**/{version}/*.nc"
 
-def get_CMIP5_path(institute = "*", dataset = "*", exp = "*", ensemble = "*", mip="*"):
-    return f"{institute}/{dataset}/{exp}/mon/*/{mip}/{ensemble}"
+def get_CMIP5_path(institute = "*", dataset = "*", exp = "*", ensemble = "*", mip="*", version="**", var="*"):
+    return f"{institute}/{dataset}/{exp}/mon/*/{mip}/{ensemble}/*/{var}/*.nc"
 
 
 get_path_function = {
@@ -29,7 +29,7 @@ get_path_function = {
     "CMIP5": get_CMIP5_path
 }
 
-def add_model_to_tree(ilamb_root, institute, dataset, project, exp, ensemble, version):
+def add_model_to_tree(ilamb_root, institute, dataset, project, exp, ensemble):
     """
     """
     print(f"Adding {dataset} to the ILAMB Tree")
@@ -37,28 +37,36 @@ def add_model_to_tree(ilamb_root, institute, dataset, project, exp, ensemble, ve
     Path(model_root).mkdir(parents=True, exist_ok=True)
 
     for mip, vars in mip_vars.items():
-        models = []
-        for path in rootpath[project]:
-            search_path = os.path.join(path, get_path_function[project](institute=institute, dataset=dataset, exp=exp, ensemble=ensemble, mip=mip))
-            models += glob.glob(search_path)
-        if models:
-            model = models[0]
-            for var in vars:
-                if project == "CMIP6":
-                    files = glob.glob(model+f"/{var}/**/{version}/*.nc")
-                if project == "CMIP5":
-                    files = glob.glob(model+f"/*/{var}/*.nc")
+        for var in vars:
+            for path in rootpath[project]:
+                search_path = os.path.join(path, get_path_function[project](
+                    institute=institute, 
+                    dataset=dataset, 
+                    exp=exp, 
+                    ensemble=ensemble, 
+                    mip=mip,
+                    var=var))
+                files = glob.glob(search_path)
                 if not files:
                     continue
-                if len(files) == 1:
+                
+                unique_files = []
+                for file in files:
+                    filenames = [Path(path).stem for path in unique_files]
+                    if Path(file).stem not in filenames:
+                        unique_files.append(file)
+                files = unique_files
+
+                if len(files) > 1:
+                    with xarray.open_mfdataset(files, use_cftime=True, combine_attrs='drop_conflicts') as f:
+                        f.to_netcdf(f"{model_root}/{var}.nc")
+                else:
                     try:
                         Path(f"{model_root}/{var}.nc").unlink()
                     except:
                         pass
                     Path(f"{model_root}/{var}.nc").symlink_to(f"{files[0]}")
-                if len(files) > 1:
-                    with xarray.open_mfdataset(files, use_cftime=True, combine_attrs='drop_conflicts') as f:
-                        f.to_netcdf(f"{model_root}/{var}.nc")
+
     return
 
 

@@ -13,6 +13,7 @@ def symlink_force(target, link_name):
     link_dir = os.path.dirname(link_name)
 
     while True:
+        print("Attemtp")
         temp_link_name = tempfile.mktemp(dir=link_dir)
         try:
             os.symlink(target, temp_link_name)
