@@ -7,7 +7,7 @@ from .utilities import MyParser
 
 rootpath = {
     "CMIP6": ["/g/data/fs38/publications/CMIP6", "/g/data/oi10/replicas/CMIP6"],
-    "CMIP5": ["/g/data/r87/DRSv3/CMIP5", "/g/data/al33/replicas/CMIP5/combined", "/g/data/rr3/publications/CMIP5/output1"]
+    "CMIP5": ["/g/data/r87/", "/g/data/al33/", "/g/data/rr3/"]
 }
 
 mip_vars ={
@@ -17,11 +17,16 @@ mip_vars ={
     'Omon':['hfds'],
     }
 
-def get_CMIP6_path(institute = "*", dataset = "*", exp = "*", ensemble = "*", mip="*", version="**", var="*"):
-    return f"CMIP/{institute}/{dataset}/{exp}/{ensemble}/{mip}/{var}/**/{version}/*.nc"
+def get_CMIP6_path(mip="*", institute = "*", dataset = "*", exp = "*", ensemble = "*", frequency="*", version="**", var="*"):
+    return f"{mip}/{institute}/{dataset}/{exp}/{ensemble}/{frequency}/{var}/**/{version}/*.nc"
 
-def get_CMIP5_path(institute = "*", dataset = "*", exp = "*", ensemble = "*", mip="*", version="**", var="*"):
-    return f"{institute}/{dataset}/{exp}/mon/*/{mip}/{ensemble}/*/{var}/*.nc"
+def get_CMIP5_path(group="*", mip="*", institute = "*", dataset = "*", exp = "*", ensemble = "*", frequency="*", version="**", var="*"):
+    if group=="r87":
+        return f"{group}/DRSv3/{mip}/{institute}/{dataset}/{exp}/mon/*/{frequency}/{ensemble}/*/{var}/*.nc"
+    if group=="al33":
+        return f"{group}/replicas/{mip}/combined/{institute}/{dataset}/{exp}/mon/*/{frequency}/{ensemble}/*/{var}/*.nc"
+    if group=="rr3":
+        return f"{group}/publications/{mip}/ouput1/{institute}/{dataset}/{exp}/mon/*/{frequency}/{ensemble}/*/{var}/*.nc"
 
 
 get_path_function = {
@@ -29,22 +34,34 @@ get_path_function = {
     "CMIP5": get_CMIP5_path
 }
 
-def add_model_to_tree(ilamb_root, institute, dataset, project, exp, ensemble):
+def add_model_to_tree(ilamb_root, mip, institute, dataset, project, exp, ensemble):
     """
     """
     print(f"Adding {dataset} to the ILAMB Tree")
     model_root = f"{ilamb_root}/MODELS/{dataset}/{exp}/{ensemble}"
     Path(model_root).mkdir(parents=True, exist_ok=True)
 
-    for mip, vars in mip_vars.items():
+    for frequency, vars in mip_vars.items():
         for var in vars:
             for path in rootpath[project]:
-                search_path = os.path.join(path, get_path_function[project](
-                    institute=institute, 
-                    dataset=dataset, 
-                    exp=exp, 
-                    ensemble=ensemble, 
-                    mip=mip,
+                if project=='CMIP5':
+                    search_path = os.path.join(path, get_path_function[project](
+                        group=path.split('/')[-2],
+                        mip=mip,
+                        institute=institute, 
+                        dataset=dataset, 
+                        exp=exp, 
+                        ensemble=ensemble, 
+                        frequency=frequency,
+                    var=var))
+                else:
+                    search_path = os.path.join(path, get_path_function[project](
+                        mip=mip,
+                        institute=institute, 
+                        dataset=dataset, 
+                        exp=exp, 
+                        ensemble=ensemble, 
+                        frequency=frequency,
                     var=var))
                 files = glob.glob(search_path)
                 if not files:
@@ -107,3 +124,7 @@ def tree_generator():
         add_model_to_tree(**dataset, ilamb_root=ilamb_root)
     
     return
+
+
+if __name__=='__main__':
+    tree_generator()
