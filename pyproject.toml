@@ -25,6 +25,7 @@ requires = [
 
 [project.scripts]
 ilamb-tree-generator = "access_med_utils.ilamb:tree_generator"
+check-hackathon = "access_med_utils.hackathon:check_hackathon"
 
 [tool.versioneer]
 VCS = "git"
