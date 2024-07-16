@@ -22,9 +22,7 @@ sys.path.append('/g/data/kj13/users/yz9299/app4/APP4/subroutines')
 sys.path.append('./')
 os.environ['ANCILLARY_FILES'] = '/g/data/p66/CMIP6/APP_ancils'
 from app_functions import *
-# from non_cmip_dataset import *
 
-################################################################################################
 #GLOBAL
 UM_realms = [
     'atmos',
@@ -45,9 +43,6 @@ ANCILLARY_FILENAME = '/g/data/p66/CMIP6/APP_ancils'
 
 var_set=[]
 var_dict={}
-
-# special_var=['rsus','tasmax','tasmin']
-################################################################################################
 
 def Parse_config_var(var_dict, master_filename):
     '''
@@ -70,31 +65,10 @@ def Parse_config_var(var_dict, master_filename):
 
     with open(master_filename,'r') as g:
         champ_reader = csv.reader(g, delimiter=',')
-
         for raw in champ_reader:
             if not raw[0].startswith('#') and raw[0] not in map_dic.keys():
                 map_dic[raw[0]]=raw[1:]
 
-    # for line in open(config_filename).readlines():
-    #     line = line.strip()
-    #     if line.startswith("#"): continue
-    #     line = line[:line.index("#")] if "#" in line else line
-
-    #     m=re.search(r"(.*)=(.*)",line)
-
-    #     if m and m.group(1).strip() in ['variable','alternate_vars','derived','ctype']:
-    #         # print(m.group(2).strip())
-    #         if m.group(1).strip()=='ctype' and m.group(2).strip().replace('"','')=='ConfSoilCarbon':
-    #             # print(m.group(1).strip(),m.group(2).strip())
-    #             var_list=['ra','gpp','tas','pr']
-    #         elif m.group(1).strip()=='derived':
-    #             var_list=re.compile('\w+').findall(m.group(2).strip())
-    #         else:
-    #             var_list=[m.group(2).strip().replace('"','')]
-    #         # print(var_list)
-    #         for var in var_list:
-    #             if var not in result.keys() and var in map_dic.keys():
-    #                 result[var]=map_dic[var]
     for value in var_dict.values():
         for var in value:
             if var not in result.keys() and var in map_dic.keys():
@@ -104,7 +78,7 @@ def Parse_config_var(var_dict, master_filename):
 
 def get_filestructure(master_line, history_path):
     '''
-    Find DRS of each variable
+    Find path to each variable
 
     Parmeters:
     -------------    
@@ -154,6 +128,54 @@ def get_filestructure(master_line, history_path):
     return file_structure
 
 
+def create_result_dict(var_mapping_dic, history_path):
+    """
+    Create a temp dictionary which contain variable informations
+
+    Parameters:
+    ------------
+    var_mapping_dic : dict{}
+        A dictionary contain informations from master_map.csv
+    history_path : str
+        path to history data
+
+    Return:
+    -------------
+    dictionary which contain variable informations
+
+    """
+    result_dict={}
+    for key in var_mapping_dic.keys():
+        temp_list = [key]+var_mapping_dic[key]
+        file_structure = get_filestructure(temp_list, history_path)
+        result_dict[temp_list[0]] = temp_list[1:]
+        result_dict[temp_list[0]].append(file_structure)
+    return result_dict
+
+
+def create_structure_dict(result_dict):
+    """
+    Create a temp dictionary which contain variable informations
+
+    Parameters:
+    ------------
+    result_dict : dict{}
+        A dictionary contain variable informations
+
+    Return:
+    -------------
+    dictionary which key is the file structure to a specific variable
+
+    """
+    structure_dict = {}
+    for item in result_dict.keys():
+        if result_dict[item][-1] not in structure_dict:
+            structure_dict[result_dict[item][-1]] = [item]
+            continue
+        structure_dict[result_dict[item][-1]].append(item)
+    return structure_dict
+
+
 def generate_cmip(noncmip_path, new_nc_path,mip_vars_dict):
     '''
     Main function, trigger the whole mapping process
@@ -170,22 +192,9 @@ def generate_cmip(noncmip_path, new_nc_path,mip_vars_dict):
     history_path = noncmip_path + '/history/'
     master_map_path='./master_map.csv'
     var_mapping_dic = Parse_config_var(mip_vars_dict, master_map_path)
-    result_dict = {}
-    for key in var_mapping_dic.keys():
-        temp_list = [key]+var_mapping_dic[key]
-        file_structure = get_filestructure(temp_list, history_path)
-        result_dict[temp_list[0]] = temp_list[1:]
-        result_dict[temp_list[0]].append(file_structure)
+    result_dict = create_result_dict(var_mapping_dic, history_path)
+    structure_dict = create_structure_dict(result_dict)
 
-    structure_dict = {}
-    for item in result_dict.keys():
-        if result_dict[item][-1] not in structure_dict:
-            structure_dict[result_dict[item][-1]] = [item]
-            continue
-        structure_dict[result_dict[item][-1]].append(item)
-    print('structure_dict:',structure_dict)
-    print('history_path:',history_path)
-    print('result_dict:',result_dict)
     new_netcdf(history_path, structure_dict, result_dict, new_nc_path)
 
 
@@ -255,15 +264,7 @@ def mp_newdataset(file):
             if temp_list[2].find('lon')!=-1:
                 lon = ds[temp_list[1].split()[0]].getLatitude()
             
-            # if temp_list[2].find('times')!=-1:
-            #     times = access_file[0][varNames[0]].getTime()
-            #     print('times:',times)
-            # if temp_list[2].find('depth')!=-1:
-            #     depth = access_file[0][varNames[0]].getAxis(1)
-            # if temp_list[2].find('lat')!=-1:
-            #     lat = access_file[0][varNames[0]].getLatitude()
-            # if temp_list[2].find('lon')!=-1:
-            #     lon = access_file[0][varNames[0]].getLatitude()
+
             if temp_list[2]!=None:
                 var_data=eval(temp_list[2])
 
@@ -290,8 +291,7 @@ def mp_newdataset(file):
                 coords_time=ds.coords['time'][0]
             else:
                 coords_time=ds.coords['time']
-            # print('var_data:',var_data)  
-            print('var_name:',var_name)
+           
             if var_name=='nbp':
                 var_data=var_data.asma()
             try:    
@@ -311,8 +311,6 @@ def mp_newdataset(file):
             
             except Exception as e:
                 raise e
-
-        
     
         temp_ds=temp_ds.rename({'key':var_name})
         temp_ds[var_name].attrs['units']=temp_list[3]
@@ -329,8 +327,7 @@ def mp_newdataset(file):
         if var_name not in ds_dict.keys():
             # ds_dict[var_name]=pickle.dumps(temp_ds,protocol=-1)#change
             ds_dict[var_name]=temp_ds
-        else:
-            print('Wromg!!!')
+
         ds.close()
 
     return ds_dict
@@ -361,16 +358,123 @@ def multi_combine(dataset_list):
     del dataset
     gc.collect()
     if var =='rsus' or var =='tasmax' or var =='tasmin' or var=='cVeg' or var=='rlus' or var=='lai' or var=='nbp' or var=='cSoil':
-        dset=Dataset(new_nc_path+'/'+var+'.nc',mode='a')
-        dset.variables['time'].units='days since 1850-1-1 00:00:00'   
-        dset.close()
+        with Dataset(new_nc_path+'/'+var+'.nc',mode='a') as dset:
+            dset.variables['time'].units='days since 1850-1-1 00:00:00'   
+        # dset.close()
+
+
+def pool_process(func, process_list):
+    """
+    run a function in a multiprocess pool
+
+    Parameters:
+    ------------
+    func : function
+        a function to input to multiprocess pool
+    process_list : list[]
+        a list which contains input variables to func 
+
+    Return:
+    -------------
+        a list contain returns fron func
+    """
+    num_cpu=mp.cpu_count()
+    if num_cpu == 1:
+        pool=Pool(int(1))
+    else:
+        pool=Pool(int(num_cpu/2))
+    result=pool.map(func,process_list)
+    pool.close()
+    pool.join()
+    return result
+
+
+def get_variable_from_file(s_dic, non_cmip_path, new_nc_path):
+    """
+    Load non-cmip data from file and save into a dict
+
+    Parameters:
+    ------------
+        s_dic : dict{}
+            directory contain variables pair with DRS
+        non_cmip_path : str
+            path to noncmip-history directory
+        new_nc_path : str
+            path to write the cmorised data 
+
+    Return:
+    -------------
+        A list of all the cmorised data
+
+    """
+    i=0
+    results=[]
+    var_sets=[]
+    dataset_list=[]
+    for path in s_dic.keys():
+        file_set=[f for f in glob.glob(non_cmip_path+path)]
+        global var_set
+        var_set = s_dic[path]
+        var_sets.append(var_set)
+        result = pool_process(mp_newdataset, file_set)
+        results.append(result)
+
+    for result in results:
+        var_set=var_sets[i]
+        for var in var_set:
+            temp_list=[f[var] for f in result]
+            dataset_list.append([var,temp_list,new_nc_path])
+        i+=1
+    return dataset_list
+
+
+def reorder_datalist(results, var_sets, new_nc_path):
+    """
+    combine
+
+    Parameters:
+    ------------
+        s_dic : dict{}
+            directory contain variables pair with DRS
+        non_cmip_path : str
+            path to noncmip-history directory 
+
+    Return:
+    -------------
+        results : dict{}
+            pair of variable and cmoriserd data in one time stamp
+        var_sets: list[]
+            list of variable name
+
+    """
+    i=0
+    dataset_list=[]
+
+    for result in results:
+        var_set=var_sets[i]
+        for var in var_set:
+            temp_list=[f[var] for f in result]
+            dataset_list.append([var,temp_list,new_nc_path])
+        i+=1
+    return dataset_list
+
+def write_cmorised_data(dataset_list):
+    """
+    Combine all the cmorised data of each variable and write to a new netCDF file
+
+    Parameters:
+    ------------
+        dataset_list : list[]
+            A list of all the cmorised data
+    """
+    pool_process(multi_combine, dataset_list)
 
 
 def new_netcdf(non_cmip_path,s_dic,var_dict_out,new_nc_path):
     '''
     parameters:
     ----------
-    non+cmip_path : str
+    non_cmip_path : str
         path to noncmip-history directory
     s_dic : dict{}
         key is the variables name and value is the DRS of noncmip dataset file from noncmip-history directory
@@ -386,50 +490,34 @@ def new_netcdf(non_cmip_path,s_dic,var_dict_out,new_nc_path):
     var_sets=[]
     dataset_list=[]
 
-    print('------------------------------------------------------------------------------------------------------')
-    print('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
+    time_start=time.time()
 
-    t0=time.time()
-    
-    #Calculate and map variables 
-    for path in s_dic.keys():
+    dataset_list = get_variable_from_file(s_dic, non_cmip_path, new_nc_path)
 
-        file_set=[f for f in glob.glob(non_cmip_path+path)]
+    # i=0
+    # for result in results:
+    #     var_set=var_sets[i]
+    #     for var in var_set:
+    #         temp_list=[f[var] for f in result]
+    #         print(len(temp_list),var)
+    #         dataset_list.append([var,temp_list,new_nc_path])
+    #     i+=1
 
-        global var_set
-        var_set=s_dic[path]
-        var_sets.append(var_set)
-        num_cpu=mp.cpu_count()
-        pool=Pool(int(num_cpu/2))
-        result=pool.map(mp_newdataset,file_set)
-        pool.close()
-        pool.join()
-        results.append(result)
-        
-
-    print('calcu_time:',time.time()-t0)
-    print('results:',results)
-
-    i=0
-    for result in results:
-        var_set=var_sets[i]
-        for var in var_set:
-            temp_list=[f[var] for f in result]
-            print(len(temp_list),var)
-            dataset_list.append([var,temp_list,new_nc_path])
-        i+=1
+    # dataset_list=reorder_datalist(results, var_sets, new_nc_path)
 
     if not os.path.isdir(new_nc_path):
         os.makedirs(new_nc_path)
 
-    tt0=time.time()
-    pool=Pool(int(num_cpu/2))
-    pool.map(multi_combine,dataset_list)
-    tt1=time.time()
-    print(tt1-tt0)
-    pool.close()
-    pool.join()
+    # tt0=time.time()
+    # pool=Pool(int(num_cpu/2))
+    # pool.map(multi_combine,dataset_list)
+    # tt1=time.time()
+    # print(tt1-tt0)
+    # pool.close()
+    # pool.join()
 
-    t1=time.time()
-    dt1=t1-t0
-    print('total_time_cost:',dt1)
+    write_cmorised_data(dataset_list)
+
+    time_end=time.time()
+    time_cost=time_end-time_start
+    print('total_time_cost:',time_cost)

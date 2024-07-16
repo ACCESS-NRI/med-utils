@@ -36,12 +36,16 @@ get_path_function = {
     "CMIP5": get_CMIP5_path
 }
 
-def add_model_to_tree(ilamb_root, mip, institute, dataset, project, exp, ensemble = None):
+def add_model_to_tree(ilamb_root, mip, institute, dataset, project, exp, ensemble = None, path = None):
     """
     """
 
     if mip == 'non-CMIP':
-        noncmip_path=f"{rootpath['non-CMIP'][0]}/{dataset}/{exp}"
+        print(f"CMORisering {exp} and add result to ILAMB Tree")
+        if path == None:
+            path = rootpath['non-CMIP'][0]
+
+        noncmip_path=f"{path}/{dataset}/{exp}"
         model_root=f"{ilamb_root}/MODELS/{dataset}/{exp}"
         Path(model_root).mkdir(parents=True,exist_ok=True)
         mip_vars.pop('Omon')
