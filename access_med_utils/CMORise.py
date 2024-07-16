@@ -494,27 +494,8 @@ def new_netcdf(non_cmip_path,s_dic,var_dict_out,new_nc_path):
 
     dataset_list = get_variable_from_file(s_dic, non_cmip_path, new_nc_path)
 
-    # i=0
-    # for result in results:
-    #     var_set=var_sets[i]
-    #     for var in var_set:
-    #         temp_list=[f[var] for f in result]
-    #         print(len(temp_list),var)
-    #         dataset_list.append([var,temp_list,new_nc_path])
-    #     i+=1
-
-    # dataset_list=reorder_datalist(results, var_sets, new_nc_path)
-
     if not os.path.isdir(new_nc_path):
         os.makedirs(new_nc_path)
-
-    # tt0=time.time()
-    # pool=Pool(int(num_cpu/2))
-    # pool.map(multi_combine,dataset_list)
-    # tt1=time.time()
-    # print(tt1-tt0)
-    # pool.close()
-    # pool.join()
 
     write_cmorised_data(dataset_list)
 
