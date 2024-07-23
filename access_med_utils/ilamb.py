@@ -3,8 +3,8 @@ import glob
 import os
 import xarray
 import yaml
-from utilities import MyParser
-from CMORise import generate_cmip
+from .utilities import MyParser
+from .CMORise import generate_cmip
 
 rootpath = {
     "CMIP6": ["/g/data/fs38/publications/CMIP6", "/g/data/oi10/replicas/CMIP6"],
