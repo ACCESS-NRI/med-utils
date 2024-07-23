@@ -351,7 +351,6 @@ def multi_combine(dataset_list):
     dataset=xr.combine_by_coords(ds_list)
     dataset['lat_bnds']=dataset['lat_bnds'][0]
     dataset['lon_bnds']=dataset['lon_bnds'][0]
-    print(dataset)
     if os.path.isfile(new_nc_path+'/'+var+'.nc'):
         os.remove(new_nc_path+'/'+var+'.nc')
     dataset.to_netcdf(new_nc_path+'/'+var+'.nc')
