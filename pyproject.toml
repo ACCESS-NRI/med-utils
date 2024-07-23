@@ -5,7 +5,7 @@ authors = [
 ]
 description = "ACCESS MED Utilities"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 license = {text = "APACHE-2.0"}
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -13,7 +13,7 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
 ]
-dependencies = ["argparse", "pyyaml", "dask", "xarray",  "netcdf4"]
+dependencies = ["argparse", "pyyaml", "dask", "xarray",  "netcdf4", "cdms2"]
 dynamic = ["version"]
 
 [build-system]
