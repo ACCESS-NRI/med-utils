@@ -21,7 +21,7 @@ from multiprocessing import Pool
 sys.path.append('/g/data/kj13/users/yz9299/app4/APP4/subroutines')
 sys.path.append('./')
 os.environ['ANCILLARY_FILES'] = '/g/data/p66/CMIP6/APP_ancils'
-from app_functions import *
+from .app_functions import *
 
 #GLOBAL
 UM_realms = [
