@@ -3,25 +3,19 @@
 
 import os
 import time
-import re
 import gc
 import pandas as pd
 import csv
-import fnmatch
 import glob
-import dask
 import xarray as xr
-import sys
 import cdms2
-from netCDF4 import Dataset
 import datetime
 import numpy as np
 import multiprocessing as mp
 from multiprocessing import Pool
-sys.path.append('/g/data/kj13/users/yz9299/app4/APP4/subroutines')
-sys.path.append('./')
+
 os.environ['ANCILLARY_FILES'] = '/g/data/p66/CMIP6/APP_ancils'
-from app_functions import *
+from .app_functions import *
 
 #GLOBAL
 UM_realms = [
@@ -36,13 +30,6 @@ MOM_realms = [
 CICE_realms = [
     'seaIce']
 
-CONFIG_FILENAME = '/g/data/kj13/users/yz9299/ilamb_test/CMIP6.cfg'
-MASTER_FILENAME = '/g/data/kj13/users/yz9299/app4/APP4/input_files/master_map.csv'
-ANCILLARY_FILENAME = '/g/data/p66/CMIP6/APP_ancils'
-
-
-var_set=[]
-var_dict={}
 
 def Parse_config_var(var_dict, master_filename):
     '''
@@ -59,7 +46,6 @@ def Parse_config_var(var_dict, master_filename):
     ------------
     A dict with variable name as key and variable imformation as value
     '''
-
     map_dic={}
     result={}
 
@@ -199,7 +185,7 @@ def generate_cmip(noncmip_path, new_nc_path,mip_vars_dict):
 
 
 
-def mp_newdataset(file):
+def mp_newdataset(file_varset):
     '''
     mapping noncmip data to CMIP format
 
@@ -211,10 +197,10 @@ def mp_newdataset(file):
     Return:
     -------------
     xarray under CMIP format
-    '''
-        
-    global var_set
-    global special_var
+    '''    
+    file=file_varset[0]
+    var_set=file_varset[1]
+    var_info_dict=file_varset[2]
     ds_dict={}
     ds=xr.open_dataset(file)
 
@@ -247,7 +233,7 @@ def mp_newdataset(file):
 
     for var_name in var_set:
         
-        temp_list=var_dict[var_name]
+        temp_list=var_info_dict[var_name]
 
         if len(temp_list[1].split())>=1 and temp_list[2]!='':
             var=[]
@@ -272,7 +258,7 @@ def mp_newdataset(file):
         else:
             var_data=ds[temp_list[1].strip()]
 
-        if str(type(var_data))=="<class 'xarray.core.dataarray.DataArray'>":
+        if isinstance(var_data, xr.core.dataarray.DataArray):
             temp_ds=xr.Dataset(
                 data_vars=dict(
                 key=var_data,
@@ -324,8 +310,10 @@ def mp_newdataset(file):
             temp_ds=temp_ds.assign_coords(depth=depth_val)
             temp_ds=temp_ds.assign(depth_bnds=(['depth','bnds'],depth_bounds))
         
+        if var in ['rsus', 'tasmax', 'tasmin', 'cVeg', 'rlus', 'lai', 'nbp', 'cSoil']:
+            temp_ds.time.encoding['units']='days since 1850-1-1 00:00:00' 
+        
         if var_name not in ds_dict.keys():
-            # ds_dict[var_name]=pickle.dumps(temp_ds,protocol=-1)#change
             ds_dict[var_name]=temp_ds
 
         ds.close()
@@ -342,9 +330,6 @@ def multi_combine(dataset_list):
     dataset_list : list[]
         A list contain all the dataet (timerange:1850-2014) of one variable
     '''
-
-    global special_var
-
     var=dataset_list[0]
     ds_list=dataset_list[1]
     new_nc_path=dataset_list[2]
@@ -356,10 +341,6 @@ def multi_combine(dataset_list):
     dataset.to_netcdf(new_nc_path+'/'+var+'.nc')
     del dataset
     gc.collect()
-    if var =='rsus' or var =='tasmax' or var =='tasmin' or var=='cVeg' or var=='rlus' or var=='lai' or var=='nbp' or var=='cSoil':
-        with Dataset(new_nc_path+'/'+var+'.nc',mode='a') as dset:
-            dset.variables['time'].units='days since 1850-1-1 00:00:00'   
-        # dset.close()
 
 
 def pool_process(func, process_list):
@@ -388,7 +369,7 @@ def pool_process(func, process_list):
     return result
 
 
-def get_variable_from_file(s_dic, non_cmip_path, new_nc_path):
+def get_variable_from_file(s_dic, non_cmip_path, new_nc_path, var_info_dict):
     """
     Load non-cmip data from file and save into a dict
 
@@ -406,56 +387,22 @@ def get_variable_from_file(s_dic, non_cmip_path, new_nc_path):
         A list of all the cmorised data
 
     """
-    i=0
     results=[]
     var_sets=[]
     dataset_list=[]
+    file_set=[]
+
     for path in s_dic.keys():
-        file_set=[f for f in glob.glob(non_cmip_path+path)]
-        global var_set
-        var_set = s_dic[path]
-        var_sets.append(var_set)
-        result = pool_process(mp_newdataset, file_set)
-        results.append(result)
+        file_set+=[[f, s_dic[path], var_info_dict] for f in glob.glob(non_cmip_path+path)]
+        var_sets+=s_dic[path]
+    results = pool_process(mp_newdataset, file_set)
+    
+    for var in var_sets:
+        temp_list=[f[var] for f in results if var in f.keys()]
+        dataset_list.append([var,temp_list,new_nc_path])
 
-    for result in results:
-        var_set=var_sets[i]
-        for var in var_set:
-            temp_list=[f[var] for f in result]
-            dataset_list.append([var,temp_list,new_nc_path])
-        i+=1
     return dataset_list
 
-
-def reorder_datalist(results, var_sets, new_nc_path):
-    """
-    combine
-
-    Parameters:
-    ------------
-        s_dic : dict{}
-            directory contain variables pair with DRS
-        non_cmip_path : str
-            path to noncmip-history directory 
-
-    Return:
-    -------------
-        results : dict{}
-            pair of variable and cmoriserd data in one time stamp
-        var_sets: list[]
-            list of variable name
-
-    """
-    i=0
-    dataset_list=[]
-
-    for result in results:
-        var_set=var_sets[i]
-        for var in var_set:
-            temp_list=[f[var] for f in result]
-            dataset_list.append([var,temp_list,new_nc_path])
-        i+=1
-    return dataset_list
 
 def write_cmorised_data(dataset_list):
     """
@@ -482,20 +429,11 @@ def new_netcdf(non_cmip_path,s_dic,var_dict_out,new_nc_path):
     new_nc_path : str
         path to save the new NETcdf file
     '''
-
-    global var_dict
-    var_dict=var_dict_out
-    results=[]
-    var_sets=[]
-    dataset_list=[]
-
     time_start=time.time()
 
-    dataset_list = get_variable_from_file(s_dic, non_cmip_path, new_nc_path)
-
+    dataset_list = get_variable_from_file(s_dic, non_cmip_path, new_nc_path, var_dict_out)
     if not os.path.isdir(new_nc_path):
         os.makedirs(new_nc_path)
-
     write_cmorised_data(dataset_list)
 
     time_end=time.time()
