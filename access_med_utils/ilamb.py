@@ -7,7 +7,7 @@ from .utilities import MyParser
 from .CMORise import generate_cmip
 
 rootpath = {
-    "CMIP6": ["/g/data/fs38/publications/CMIP6", "/g/data/oi10/replicas/CMIP6"],
+    "CMIP6": ["/g/data/fs38/publications/CMIP6", "/g/data/oi10/replicas/CMIP6","/g/data/zv30/cmip/CMIP6"],
     "CMIP5": ["/g/data/r87/", "/g/data/al33/", "/g/data/rr3/"],
     "non-CMIP": ["/g/data/p73/archive/non-CMIP"]
 }
